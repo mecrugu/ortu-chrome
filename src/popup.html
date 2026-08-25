@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Örtü</title>
+<style>
+  :root {
+    --ink: #12161c; --ink2: #171d26; --ink3: #1b2330;
+    --line: #263041; --text: #e7ecf2; --mut: #8d9bad;
+    --mint: #5fd3b0; --amber: #ffab5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  /* .row { display: flex } yazar stili, tarayıcının [hidden] kuralını eziyor:
+     bu olmadan gizlenmesi gereken satır her zaman görünüyordu. */
+  [hidden] { display: none !important }
+  body {
+    width: 380px; background: var(--ink); color: var(--text);
+    font: 13px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 9px;
+    padding: 13px 15px; border-bottom: 1px solid var(--line); background: var(--ink2);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mint) }
+  .dot.off { background: #55606f }
+  h1 { font-size: 14px; font-weight: 650; letter-spacing: .02em }
+  .switch { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; cursor: pointer }
+  .switch input { accent-color: var(--mint); width: 16px; height: 16px; cursor: pointer }
+  .switch span { font-size: 12px; color: var(--mut) }
+
+  #status {
+    padding: 9px 15px; font-size: 12px; background: var(--ink3);
+    border-bottom: 1px solid var(--line); color: #cfd9e4;
+  }
+  #status.kapali { color: var(--amber) }
+
+  section { padding: 12px 15px; border-bottom: 1px solid var(--line) }
+  h2 {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--mut); font-weight: 600; margin-bottom: 7px;
+  }
+  .seg { display: flex; gap: 5px; flex-wrap: wrap }
+  .seg button {
+    font: inherit; font-size: 12px; padding: 6px 11px; border-radius: 8px;
+    border: 1px solid var(--line); background: transparent; color: #b8c4d2; cursor: pointer;
+  }
+  .seg button:hover { background: var(--ink3) }
+  .seg button[aria-pressed="true"] {
+    background: var(--mint); border-color: var(--mint); color: #0c1116; font-weight: 620;
+  }
+  .seg button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px }
+  .hint { font-size: 11.5px; color: var(--mut); margin-top: 7px }
+
+  .row { display: flex; align-items: center; gap: 9px; margin-top: 9px; font-size: 12.5px }
+  .row input[type=checkbox] { accent-color: var(--mint); width: 15px; height: 15px; cursor: pointer }
+  .row label { cursor: pointer }
+  .row .site { color: var(--mut); font-family: ui-monospace, Menlo, monospace; font-size: 11.5px }
+
+  textarea {
+    width: 100%; min-height: 76px; resize: vertical; margin-top: 4px;
+    background: var(--ink2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 10px;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  textarea:focus { outline: 2px solid var(--mint); outline-offset: -1px }
+
+  .tools { display: flex; gap: 6px; margin-top: 8px; align-items: center }
+  .link {
+    background: none; border: 0; color: #7fb6ff; font: inherit; font-size: 12px;
+    cursor: pointer; padding: 3px 5px; border-radius: 5px;
+  }
+  .link:hover { background: var(--ink3) }
+  .link:focus-visible { outline: 2px solid var(--mint); outline-offset: 1px }
+
+  #found { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 5px }
+  .chip {
+    font-size: 11px; background: var(--ink3); color: #9fb0c4;
+    padding: 3px 9px; border-radius: 999px;
+  }
+  #out {
+    margin-top: 9px; padding: 10px 12px; background: var(--ink2);
+    border-left: 3px solid var(--mint); border-radius: 0 8px 8px 0;
+    font: 11.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow-y: auto;
+  }
+  #out:empty { display: none }
+  #wider { margin-top: 8px; font-size: 11.5px; color: var(--amber) }
+  #wider:empty { display: none }
+
+  footer {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 15px; font-size: 11.5px; color: var(--mut);
+  }
+  footer .spacer { flex: 1 }
+</style>
+</head>
+<body>
+  <header>
+    <span class="dot" id="dot"></span>
+    <h1>Örtü</h1>
+    <label class="switch">
+      <input type="checkbox" id="enabled">
+      <span>açık</span>
+    </label>
+  </header>
+
+  <div id="status">Yükleniyor…</div>
+
+  <section>
+    <h2>Gönderirken</h2>
+    <div class="seg" id="sendMode"></div>
+    <p class="hint" id="sendHint"></p>
+  </section>
+
+  <section>
+    <h2>Yapıştırınca</h2>
+    <div class="seg" id="pasteMode"></div>
+    <p class="hint" id="pasteHint"></p>
+  </section>
+
+  <section>
+    <h2>Kapsam</h2>
+    <div class="seg" id="profile"></div>
+    <p class="hint" id="profileHint"></p>
+    <div class="row">
+      <input type="checkbox" id="typingHints">
+      <label for="typingHints">Yazarken de uyar</label>
+    </div>
+    <div class="row">
+      <input type="checkbox" id="siteOn">
+      <label for="siteOn">Bu sitede çalışsın</label>
+      <span class="site" id="siteName"></span>
+    </div>
+    <div class="row" id="addRow" hidden>
+      <button class="link" id="addSite">Bu siteyi ekle (izin ister)</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Maskeleme stili</h2>
+    <div class="seg" id="style"></div>
+    <p class="hint" id="styleHint"></p>
+  </section>
+
+  <section>
+    <h2>Dene</h2>
+    <textarea id="try" placeholder="Bir metin yaz; neyin yakalandığını ve maskeli halini gör."></textarea>
+    <div class="tools">
+      <button class="link" id="fill">Örnek metin doldur</button>
+      <button class="link" id="clearTry">Temizle</button>
+    </div>
+    <div id="found"></div>
+    <div id="out"></div>
+    <div id="wider"></div>
+  </section>
+
+  <footer>
+    <span id="total">0 veri maskelendi</span>
+    <span class="spacer"></span>
+    <button class="link" id="clearMaps">Token haritasını sil</button>
+  </footer>
+
+  <script src="../engine/dictionaries.js"></script>
+  <script src="../engine/patterns.js"></script>
+  <script src="../engine/detect.js"></script>
+  <script src="../engine/tokenize.js"></script>
+  <script src="policy.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
