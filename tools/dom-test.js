@@ -18,11 +18,19 @@ const assert = require('node:assert/strict');
 let JSDOM;
 try {
     ({ JSDOM } = require('jsdom'));
-} catch (_) {
-    console.error('jsdom kurulu değil.  npm i -D jsdom  komutunu çalıştır.');
+} catch (err) {
+    // Eskiden her hata "kurulu değil" diye raporlanıyordu. jsdom kurulu ama
+    // Node sürümü yetersizse (jsdom 30 için Node 22+ gerekiyor) bu mesaj
+    // yanlış yere baktırıyor: paket kurulu, yüklenirken patlıyor.
+    if (err && err.code === 'MODULE_NOT_FOUND') {
+        console.error('jsdom kurulu değil.  npm i -D jsdom  komutunu çalıştır.');
+    } else {
+        console.error('jsdom yüklenemedi (Node ' + process.version +
+            '). jsdom 30 için Node 22 veya üstü gerekiyor.');
+        console.error(err && err.message);
+    }
     process.exit(1);
 }
-
 const ROOT = __dirname.replace(/tools$/, '');
 const FILES = [
     'engine/dictionaries.js', 'engine/patterns.js', 'engine/detect.js',
