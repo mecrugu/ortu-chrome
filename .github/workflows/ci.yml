@@ -1,0 +1,29 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Birim testleri (bağımlılıksız)
+        run: npm test
+
+      - name: DOM testleri
+        run: |
+          npm i -D jsdom --no-audit --no-fund
+          npm run test:dom
+
+      - name: İkonlar yeniden üretilebiliyor mu
+        run: npm run icons
+
+      - name: İkonlar depodakiyle aynı mı
+        run: git diff --exit-code icons/
